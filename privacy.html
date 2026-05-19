@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Medium Stats Export</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 680px; margin: 60px auto; padding: 0 24px 80px; color: #111; line-height: 1.7; }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    .meta { color: #888; font-size: 14px; margin-bottom: 40px; }
+    h2 { font-size: 16px; margin: 32px 0 8px; }
+    p, li { font-size: 15px; color: #333; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    a { color: #111; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p class="meta">Medium Stats Export &nbsp;·&nbsp; Last updated: May 2026</p>
+
+  <h2>What this extension does</h2>
+  <p>Medium Stats Export reads your story statistics from the Medium website and exports them to an Excel or CSV file that is saved directly to your device.</p>
+
+  <h2>Data we collect</h2>
+  <p>We collect <strong>nothing</strong>. Specifically:</p>
+  <ul>
+    <li>No personal data is transmitted to any server.</li>
+    <li>No analytics, telemetry, or crash reporting are included.</li>
+    <li>No account credentials are read or stored.</li>
+    <li>No data ever leaves your browser.</li>
+  </ul>
+
+  <h2>How the extension works</h2>
+  <p>When you click Export, the extension injects a script into the active Medium stats tab you already have open. That script calls Medium's own internal API using your existing browser session (the same session cookies your browser already holds) to fetch your statistics. The results are processed entirely in your browser and written to a local file download. No third party receives any data at any point.</p>
+
+  <h2>Permissions used</h2>
+  <ul>
+    <li><strong>activeTab / scripting</strong> — to read the Medium stats page you have open and call Medium's API from within that tab.</li>
+    <li><strong>storage</strong> — to remember your export settings (date range, column preferences) locally in your browser.</li>
+    <li><strong>host_permissions: https://medium.com/*</strong> — required to inject the script into Medium tabs. No data is sent to Medium beyond what your normal browser session already sends.</li>
+  </ul>
+
+  <h2>Third-party libraries</h2>
+  <p>The extension bundles two open-source libraries that run entirely locally:</p>
+  <ul>
+    <li><a href="https://github.com/gitbrent/xlsx-js-style" target="_blank">xlsx-js-style</a> — for generating Excel files.</li>
+    <li><a href="https://stuk.github.io/jszip/" target="_blank">JSZip</a> — for post-processing the Excel file to embed charts.</li>
+  </ul>
+  <p>Neither library makes any network requests.</p>
+
+  <h2>Contact</h2>
+  <p>Questions? Reach out via the <a href="https://github.com/ethanbeddard/MediumStatsExport" target="_blank">GitHub repository</a> or <a href="https://ko-fi.com/ethanbeddard" target="_blank">Ko-fi</a>.</p>
+</body>
+</html>

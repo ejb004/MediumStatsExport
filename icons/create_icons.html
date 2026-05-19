@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Icon Generator — Medium Stats Export</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; padding: 32px; background: #e8e8e8; }
+  h2 { font-size: 17px; margin-bottom: 4px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 28px; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; max-width: 900px; }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 14px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  }
+  .card-name { font-size: 11px; font-weight: 600; color: #333; text-align: center; line-height: 1.3; }
+  .previews { display: flex; align-items: flex-end; gap: 6px; }
+  canvas { border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,.25); image-rendering: pixelated; }
+  .size-lbl { font-size: 9px; color: #999; text-align: center; margin-top: 2px; }
+  .btns { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+  button {
+    background: #111; color: #fff; border: none; border-radius: 5px;
+    padding: 5px 9px; font-size: 10px; cursor: pointer;
+  }
+  button:hover { background: #333; }
+</style>
+</head>
+<body>
+<h2>Medium Stats Export — Icon Picker</h2>
+<p class="sub">Pick a design then download the three sizes. Place them in the <code>icons/</code> folder.</p>
+
+<div class="grid" id="grid"></div>
+
+<script>
+// ── Design registry ─────────────────────────────────────────────────────────
+
+const DESIGNS = [
+
+  {
+    name: '1 · Horizontal Bars',
+    draw(ctx, s) {
+      bg(ctx, s, '#111827');
+      const padX = s * 0.18, padY = s * 0.175;
+      const maxW = s - padX * 2, barH = s * 0.13;
+      const gap  = (s - padY * 2 - barH * 3) / 2;
+      ctx.fillStyle = '#fff';
+      [0.55, 0.88, 0.70].forEach((wf, i) => {
+        pill(ctx, padX, padY + i * (barH + gap), maxW * wf, barH, s >= 24);
+      });
+    }
+  },
+
+  {
+    name: '2 · Column Chart',
+    draw(ctx, s) {
+      bg(ctx, s, '#111827');
+      const heights = [0.45, 0.70, 0.55, 0.90];
+      const n = heights.length;
+      const padX = s * 0.14, padY = s * 0.15;
+      const avail = s - padX * 2;
+      const colW  = avail / n * 0.55;
+      const gapW  = avail / n * 0.45;
+      const maxH  = s - padY * 2;
+      ctx.fillStyle = '#fff';
+      heights.forEach((h, i) => {
+        const x = padX + i * (colW + gapW);
+        const bh = maxH * h;
+        const y  = padY + maxH - bh;
+        pill(ctx, x, y, colW, bh, false);
+      });
+    }
+  },
+
+  {
+    name: '3 · Rising Line',
+    draw(ctx, s) {
+      bg(ctx, s, '#0F172A');
+      const pts = [
+        [0.12, 0.72], [0.28, 0.60], [0.38, 0.65],
+        [0.52, 0.42], [0.65, 0.35], [0.80, 0.22], [0.88, 0.18]
+      ].map(([x, y]) => [s * x, s * y]);
+
+      // glow fill
+      const grad = ctx.createLinearGradient(0, s * 0.18, 0, s * 0.82);
+      grad.addColorStop(0, 'rgba(96,165,250,0.35)');
+      grad.addColorStop(1, 'rgba(96,165,250,0)');
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], s * 0.82);
+      pts.forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.lineTo(pts[pts.length - 1][0], s * 0.82);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // line
+      ctx.strokeStyle = '#60A5FA';
+      ctx.lineWidth = Math.max(1.5, s * 0.045);
+      ctx.lineJoin = 'round';
+      ctx.lineCap  = 'round';
+      ctx.beginPath();
+      pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+      ctx.stroke();
+
+      // endpoint dot
+      const [ex, ey] = pts[pts.length - 1];
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(ex, ey, s * 0.062, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  },
+
+  {
+    name: '4 · Gradient Area',
+    draw(ctx, s) {
+      bg(ctx, s, '#1E1B4B');
+      const pts = [
+        [0.10, 0.78], [0.25, 0.62], [0.40, 0.68],
+        [0.55, 0.45], [0.70, 0.30], [0.90, 0.20]
+      ].map(([x, y]) => [s * x, s * y]);
+
+      const grad = ctx.createLinearGradient(0, s * 0.18, 0, s * 0.85);
+      grad.addColorStop(0, 'rgba(167,139,250,0.6)');
+      grad.addColorStop(1, 'rgba(167,139,250,0.05)');
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], s * 0.85);
+      pts.forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.lineTo(pts[pts.length - 1][0], s * 0.85);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.strokeStyle = '#A78BFA';
+      ctx.lineWidth = Math.max(1.5, s * 0.05);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.beginPath();
+      pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+      ctx.stroke();
+    }
+  },
+
+  {
+    name: '5 · Export Arrow',
+    draw(ctx, s) {
+      bg(ctx, s, '#111827');
+      // bars — compressed to bottom half
+      const padX = s * 0.18, baseY = s * 0.82, barH_max = s * 0.36;
+      const heights = [0.55, 0.85, 0.68];
+      const n = heights.length;
+      const avail = s - padX * 2;
+      const colW  = avail / n * 0.58, gapW = avail / n * 0.42;
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      heights.forEach((h, i) => {
+        const bh = barH_max * h;
+        pill(ctx, padX + i * (colW + gapW), baseY - bh, colW, bh, false);
+      });
+      // up arrow (top half)
+      const ax = s * 0.5, ay = s * 0.16, aw = s * 0.28, ah = s * 0.30;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      // arrowhead
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(ax + aw / 2, ay + aw * 0.55);
+      ctx.lineTo(ax + aw * 0.22, ay + aw * 0.55);
+      ctx.lineTo(ax + aw * 0.22, ay + ah);
+      ctx.lineTo(ax - aw * 0.22, ay + ah);
+      ctx.lineTo(ax - aw * 0.22, ay + aw * 0.55);
+      ctx.lineTo(ax - aw / 2, ay + aw * 0.55);
+      ctx.closePath();
+      ctx.fill();
+    }
+  },
+
+  {
+    name: '6 · Medium Green',
+    draw(ctx, s) {
+      bg(ctx, s, '#00AB6C');
+      // White stylised M
+      const mx = s * 0.15, my = s * 0.20, mw = s * 0.70, mh = s * 0.42;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      const t = mh * 0.26; // stroke thickness
+      // left stem
+      ctx.rect(mx, my, t, mh);
+      // right stem
+      ctx.rect(mx + mw - t, my, t, mh);
+      ctx.fill();
+      // V diagonals (drawn as a filled V shape)
+      ctx.beginPath();
+      ctx.moveTo(mx, my);
+      ctx.lineTo(mx + mw / 2, my + mh * 0.55);
+      ctx.lineTo(mx + mw, my);
+      ctx.lineTo(mx + mw, my + t);
+      ctx.lineTo(mx + mw / 2, my + mh * 0.55 + t);
+      ctx.lineTo(mx, my + t);
+      ctx.closePath();
+      ctx.fill();
+      // small bar chart below M
+      const bpadX = s * 0.20, bbaseY = s * 0.84, bbarH = s * 0.18;
+      const bheights = [0.45, 0.80, 0.60];
+      const bavail = s - bpadX * 2;
+      const bcolW  = bavail / 3 * 0.56, bgapW = bavail / 3 * 0.44;
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      bheights.forEach((h, i) => {
+        const bh = bbarH * h;
+        ctx.fillRect(bpadX + i * (bcolW + bgapW), bbaseY - bh, bcolW, bh);
+      });
+    }
+  },
+
+  {
+    name: '7 · Metric Tiles',
+    draw(ctx, s) {
+      bg(ctx, s, '#111827');
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'];
+      const pad = s * 0.14, gap = s * 0.07;
+      const tileS = (s - pad * 2 - gap) / 2;
+      const r = tileS * 0.2;
+      [[0,0],[1,0],[0,1],[1,1]].forEach(([col, row], i) => {
+        const x = pad + col * (tileS + gap);
+        const y = pad + row * (tileS + gap);
+        ctx.fillStyle = colors[i];
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, tileS, tileS, r);
+        else ctx.rect(x, y, tileS, tileS);
+        ctx.fill();
+        // mini bar inside
+        if (s >= 24) {
+          const bpad = tileS * 0.22;
+          const bh   = tileS * 0.22;
+          ctx.fillStyle = 'rgba(255,255,255,0.6)';
+          ctx.fillRect(x + bpad, y + tileS - bpad - bh, tileS - bpad * 2, bh);
+        }
+      });
+    }
+  },
+
+  {
+    name: '8 · Sparkline Pulse',
+    draw(ctx, s) {
+      bg(ctx, s, '#111827');
+      const pts = [
+        [0.10, 0.60],[0.20, 0.55],[0.28, 0.62],[0.35, 0.30],
+        [0.45, 0.20],[0.55, 0.40],[0.63, 0.35],[0.72, 0.25],
+        [0.82, 0.42],[0.90, 0.38]
+      ].map(([x, y]) => [s * x, s * y]);
+
+      ctx.strokeStyle = '#34D399';
+      ctx.lineWidth   = Math.max(1.5, s * 0.05);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.beginPath();
+      pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+      ctx.stroke();
+
+      // glowing dot at peak
+      const peak = pts.reduce((a, b) => b[1] < a[1] ? b : a);
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(peak[0], peak[1], s * 0.07, 0, Math.PI * 2);
+      ctx.fill();
+      // outer glow ring
+      ctx.strokeStyle = 'rgba(52,211,153,0.4)';
+      ctx.lineWidth = Math.max(1, s * 0.035);
+      ctx.beginPath();
+      ctx.arc(peak[0], peak[1], s * 0.115, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  },
+
+  {
+    name: '9 · Donut Progress',
+    draw(ctx, s) {
+      bg(ctx, s, '#111827');
+      const cx = s / 2, cy = s / 2;
+      const r  = s * 0.36, lw = s * 0.14;
+      // track
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+      // arc — 75% fill
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.75);
+      ctx.stroke();
+      // small inner accent arc
+      ctx.strokeStyle = '#FDE68A';
+      ctx.lineWidth = lw * 0.35;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.45);
+      ctx.stroke();
+    }
+  },
+
+  {
+    name: '10 · Dark Minimal',
+    draw(ctx, s) {
+      // Near-black with a very slight blue undertone
+      bg(ctx, s, '#0F1624');
+      const padX = s * 0.14, baseY = s * 0.82, barH_max = s * 0.56;
+      const heights = [0.48, 0.78, 0.62, 0.90];
+      const n = heights.length;
+      const avail = s - padX * 2;
+      const colW  = avail / n * 0.55, gapW = avail / n * 0.45;
+      // Blue-grey palette — same family, brighter on taller bars
+      const colors2 = ['#3D5270', '#56718F', '#7492AF', '#9DB4CB'];
+      heights.forEach((h, i) => {
+        const bh = barH_max * h;
+        ctx.fillStyle = colors2[i];
+        if (s >= 24) {
+          ctx.beginPath();
+          const bx = padX + i * (colW + gapW);
+          if (ctx.roundRect) ctx.roundRect(bx, baseY - bh, colW, bh, [colW * 0.3, colW * 0.3, 0, 0]);
+          else ctx.rect(bx, baseY - bh, colW, bh);
+          ctx.fill();
+        } else {
+          ctx.fillRect(padX + i * (colW + gapW), baseY - bh, colW, bh);
+        }
+      });
+    }
+  },
+
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function bg(ctx, s, color) {
+  ctx.clearRect(0, 0, s, s);
+  const r = s * 0.2;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (ctx.roundRect) { ctx.roundRect(0, 0, s, s, r); }
+  else {
+    ctx.moveTo(r, 0); ctx.lineTo(s - r, 0); ctx.quadraticCurveTo(s, 0, s, r);
+    ctx.lineTo(s, s - r); ctx.quadraticCurveTo(s, s, s - r, s);
+    ctx.lineTo(r, s);     ctx.quadraticCurveTo(0, s, 0, s - r);
+    ctx.lineTo(0, r);     ctx.quadraticCurveTo(0, 0, r, 0); ctx.closePath();
+  }
+  ctx.fill();
+}
+
+function pill(ctx, x, y, w, h, rounded) {
+  if (rounded && ctx.roundRect) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, h / 2); ctx.fill();
+  } else {
+    ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+  }
+}
+
+// ── Render grid ───────────────────────────────────────────────────────────────
+
+const grid = document.getElementById('grid');
+
+DESIGNS.forEach((d, idx) => {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'card-name';
+  nameEl.textContent = d.name;
+  card.appendChild(nameEl);
+
+  const previews = document.createElement('div');
+  previews.className = 'previews';
+
+  [128, 48, 16].forEach(sz => {
+    const wrap = document.createElement('div');
+    const c = document.createElement('canvas');
+    c.width = c.height = sz;
+    c.id = `d${idx}_${sz}`;
+    const ctx = c.getContext('2d');
+    d.draw(ctx, sz);
+    const lbl = document.createElement('div');
+    lbl.className = 'size-lbl';
+    lbl.textContent = `${sz}px`;
+    wrap.appendChild(c);
+    wrap.appendChild(lbl);
+    previews.appendChild(wrap);
+  });
+
+  card.appendChild(previews);
+
+  const btns = document.createElement('div');
+  btns.className = 'btns';
+  [128, 48, 16].forEach(sz => {
+    const btn = document.createElement('button');
+    btn.textContent = `${sz}px`;
+    btn.onclick = () => {
+      const c = document.getElementById(`d${idx}_${sz}`);
+      const ctx = c.getContext('2d');
+      d.draw(ctx, sz);
+      const a = document.createElement('a');
+      a.download = `icon${sz}.png`;
+      a.href = c.toDataURL('image/png');
+      a.click();
+    };
+    btns.appendChild(btn);
+  });
+
+  card.appendChild(btns);
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

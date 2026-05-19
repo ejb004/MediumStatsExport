@@ -1,0 +1,9 @@
+# Downloaded via setup.sh — not committed
+lib/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x setup.sh)",
+      "Bash(bash setup.sh)",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}
